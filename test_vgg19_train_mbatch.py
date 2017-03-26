@@ -4,18 +4,19 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from tensorflow_vgg_train import utils
-from tensorflow_vgg_train.vgg import vgg19_trainable_skin as vgg19
+import utils
+from vgg import vgg19_trainable_skin as vgg19
+
 
 # LECTURA DE DATOS
 path = '../data/ISB2016/'
 data = pd.read_csv(path + 'ISB_Test.csv', header=None)
 train_images = data[0]
 train_labels = data[2]
-epoch = 2
+epoch = 4
 num_class = 2
 learning_rate = 0.05
-mini_batch = 10
+mini_batch = 20
 total_images = len(train_images)
 
 assert (total_images/mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
@@ -101,4 +102,4 @@ utils.print_prob_all(prob, path + 'synset_skin.txt', top=0)
 utils.print_accuracy(label, prob)
 
 # SAVE WEIGHT
-vgg.save_npy(sess, './weight/save-skin-vgg19-8.npy')
+# vgg.save_npy(sess, './weight/save-skin-vgg19-8.npy')

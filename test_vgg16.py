@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_vgg_train import utils
-from tensorflow_vgg_train.vgg import vgg16
+import utils
+from vgg import vgg16
 
 img1 = utils.load_image("./test_data/dog.png")[:, :, :3]
 img2 = utils.load_image("./test_data/quail227.jpg")[:, :, :3]
@@ -22,5 +22,4 @@ with tf.device('/cpu:0'):
             vgg.build(images)
 
         prob = sess.run(vgg.prob, feed_dict=feed_dict)
-
         utils.print_prob_all(prob, './synset.txt')

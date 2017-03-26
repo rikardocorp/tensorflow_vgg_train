@@ -6,8 +6,8 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_vgg_train import utils
-from tensorflow_vgg_train.vgg import vgg19_trainable as vgg19
+import utils
+from vgg import vgg19_trainable as vgg19
 
 img1 = utils.load_image("./test_data/tiger.jpeg")[:, :, :3]    # Con [:, :, :3] podemos ahora cargar imagenes png y jpg
 img2 = utils.load_image("./test_data/dog2.png")[:, :, :3]
@@ -67,4 +67,4 @@ with tf.device('/cpu:0'):
     utils.print_prob_all(prob, './synset.txt')
 
     # test save
-    vgg.save_npy(sess, './weight/save-vgg19.npy')
+    # vgg.save_npy(sess, './weight/save-vgg19.npy')

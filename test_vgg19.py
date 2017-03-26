@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_vgg_train import utils
-from tensorflow_vgg_train.vgg import vgg19
+import utils
+from vgg import vgg19
 
 img1 = utils.load_image("./test_data/tiger.jpeg")[:, :, :3]    # Con [:, :, :3] podemos ahora cargar imagenes png y jpg
 img2 = utils.load_image("./test_data/dog2.png")[:, :, :3]
