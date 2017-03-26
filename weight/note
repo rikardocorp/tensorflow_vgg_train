@@ -1,0 +1,6 @@
+** Here, you can download the pre-trained weights **
+
+ VGG16 [528MB] -> wget http://rikardocorp.me:8000/media/vgg16.npy
+ VGG19 [548MB] -> wget http://rikardocorp.me:8000/media/vgg19.npy
+
+** You too can save here your own files
