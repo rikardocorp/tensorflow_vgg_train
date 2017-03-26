@@ -12,10 +12,10 @@ path = '../data/ISB2016/'
 data = pd.read_csv(path + 'ISB_Test.csv', header=None)
 train_images = data[0]
 train_labels = data[2]
-epoch = 20
+epoch = 2
 num_class = 2
 learning_rate = 0.05
-mini_batch = 90
+mini_batch = 10
 total_images = len(train_images)
 
 assert (total_images/mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
@@ -52,7 +52,7 @@ true_out = tf.placeholder(tf.float32, [None, num_class])
 train_mode = tf.placeholder(tf.bool)
 
 # Initialize of the model VGG19
-vgg = vgg19.Vgg19('./weight/save-skin-vgg19-7.npy', load_weight_fc=True)
+vgg = vgg19.Vgg19('./weight/vgg19.npy', load_weight_fc=False)
 vgg.build(images, train_mode)
 sess.run(tf.global_variables_initializer())
 
@@ -65,40 +65,40 @@ prob = sess.run(vgg.prob, feed_dict={images: batch, train_mode: False})
 utils.print_prob_all(prob, path + 'synset_skin.txt', top=0)
 utils.print_accuracy(label, prob)
 
-# #
-# # PHASE #2 Training model
-# # -----------------------
-# print('\n# PHASE #2 Training model')
-# cost = tf.reduce_mean((vgg.prob - true_out) ** 2)
-# train = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-# t0 = time.time()
-# idx_aux = 0
-# for idx in range(epoch):
-#     i = idx - idx_aux
-#     batch, label, idx_aux = get_images_batch(i, idx_aux)
 #
-#     # Generate the 'one hot' or labels
-#     label = tf.one_hot([li for li in label], on_value=1, off_value=0, depth=num_class)
-#     label = list(sess.run(label))
+# PHASE #2 Training model
+# -----------------------
+print('\n# PHASE #2 Training model')
+cost = tf.reduce_mean((vgg.prob - true_out) ** 2)
+train = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+t0 = time.time()
+idx_aux = 0
+for idx in range(epoch):
+    i = idx - idx_aux
+    batch, label, idx_aux = get_images_batch(i, idx_aux)
+
+    # Generate the 'one hot' or labels
+    label = tf.one_hot([li for li in label], on_value=1, off_value=0, depth=num_class)
+    label = list(sess.run(label))
+
+    t_start = time.time()
+    sess.run(train, feed_dict={images: batch, true_out: label, train_mode: True})
+    t_end = time.time()
+    print("    Iteration: %d train on batch time: %7.3f ms." % (idx, (t_end - t_start) * 1000))
+
+t1 = time.time()
+print("    Batch size: %d" % len(batch))
+print("    Iterations: %d" % epoch)
+print("    Time per iteration: %7.3f ms" % ((t1 - t0) * 1000 / epoch))
+
 #
-#     t_start = time.time()
-#     sess.run(train, feed_dict={images: batch, true_out: label, train_mode: True})
-#     t_end = time.time()
-#     print("    Iteration: %d train on batch time: %7.3f ms." % (idx, (t_end - t_start) * 1000))
-#
-# t1 = time.time()
-# print("    Batch size: %d" % len(batch))
-# print("    Iterations: %d" % epoch)
-# print("    Time per iteration: %7.3f ms" % ((t1 - t0) * 1000 / epoch))
-#
-# #
-# # PHASE #3 Post-Test classification
-# # ---------------------------------
-# print('\n# PHASE #1 Test classification')
-# batch, label, _ = get_images_batch()
-# prob = sess.run(vgg.prob, feed_dict={images: batch, train_mode: False})
-# utils.print_prob_all(prob, path + 'synset_skin.txt', top=0)
-# utils.print_accuracy(label, prob)
-#
-# # SAVE WEIGHT
-# vgg.save_npy(sess, './weight/save-skin-vgg19-8.npy')
+# PHASE #3 Post-Test classification
+# ---------------------------------
+print('\n# PHASE #1 Test classification')
+batch, label, _ = get_images_batch()
+prob = sess.run(vgg.prob, feed_dict={images: batch, train_mode: False})
+utils.print_prob_all(prob, path + 'synset_skin.txt', top=0)
+utils.print_accuracy(label, prob)
+
+# SAVE WEIGHT
+vgg.save_npy(sess, './weight/save-skin-vgg19-8.npy')

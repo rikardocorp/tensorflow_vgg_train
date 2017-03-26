@@ -19,10 +19,6 @@ batch3 = img3.reshape((1, 224, 224, 3))
 
 batch = np.concatenate((batch1, batch2, batch3), 0)
 
-# img1 = utils.load_image("./test_data/tiger.jpeg")
-# img1_true_result = [1 if i == 292 else 0 for i in range(1000)]  # 1-hot result for tiger
-# batch1 = img1.reshape((1, 224, 224, 3))
-
 with tf.device('/cpu:0'):
     sess = tf.Session()
 
@@ -38,27 +34,16 @@ with tf.device('/cpu:0'):
 
     # print number of variables used: 143667240 variables, i.e. ideal size = 548MB
     print(vgg.get_var_count())
-
     sess.run(tf.global_variables_initializer())
 
     # test classification
     prob = sess.run(vgg.prob, feed_dict={images: batch, train_mode: False})
-    utils.print_prob(prob[0], './synset.txt')
-    utils.print_prob(prob[1], './synset.txt')
-    utils.print_prob(prob[2], './synset.txt')
+    utils.print_prob_all(prob, './synset.txt')
     print()
 
     # simple 1-step training
     cost = tf.reduce_sum((vgg.prob - true_out) ** 2)
-
-    # Optimizer #1 - minimize()
     train = tf.train.GradientDescentOptimizer(0.0001).minimize(cost)
-
-    # Optimizer #2 - compute_gradients()
-    # opt = tf.train.GradientDescentOptimizer(0.0001)
-    # grads = opt.compute_gradients(cost)
-    # train = opt.apply_gradients(grads)
-
 
     # START - Training
     batch_size = len(batch)
@@ -76,15 +61,10 @@ with tf.device('/cpu:0'):
     print("Time per iteration: %7.3f ms" % ((t1 - t0) * 1000 / n))
     # END - Train
 
-
     # test classification again, should have a higher probability about tiger
     prob, kernel = sess.run([vgg.prob, vgg.var_dict[('conv1_1', 0)]], feed_dict={images: batch, train_mode: False})
     print()
-    utils.print_prob(prob[0], './synset.txt')
-    utils.print_prob(prob[1], './synset.txt')
-    utils.print_prob(prob[2], './synset.txt')
+    utils.print_prob_all(prob, './synset.txt')
 
     # test save
-    vgg.save_npy(sess, './weight/test-save-vgg19.npy')
-
-    # print(kernel, kernel.shape)
+    vgg.save_npy(sess, './weight/save-vgg19.npy')
