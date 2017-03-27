@@ -2,6 +2,7 @@ import skimage
 import skimage.io
 import skimage.transform
 import numpy as np
+from datetime import datetime
 
 
 # synset = [l.strip() for l in open('synset.txt').readlines()]
@@ -109,6 +110,16 @@ def test():
     nx = int(img.shape[1] * ny / img.shape[0])
     img = skimage.transform.resize(img, (ny, nx))
     skimage.io.imsave("./test_data/output.jpg", img)
+
+
+def write_log(data):
+    now = datetime.now()
+    id = int(now.timestamp()*1000000)
+    date = now.strftime('%d-%m-%Y %H:%m:%S')
+
+    f = open("log-server.txt", "a+")
+    f.write('id:{}  date:{}  file:{}  input:{}  epoch:{}  m-batch:{}  l-rate:{}  save:{}\n'.format(id,date,data[0],data[1],data[2],data[3],data[4]))
+    f.close()
 
 
 if __name__ == "__main__":

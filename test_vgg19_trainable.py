@@ -19,8 +19,9 @@ batch3 = img3.reshape((1, 224, 224, 3))
 
 batch = np.concatenate((batch1, batch2, batch3), 0)
 
-with tf.device('/cpu:0'):
-    sess = tf.Session()
+with tf.Session() as sess:
+    # with tf.device('/cpu:0'):
+    #     sess = tf.Session()
 
     label = tf.one_hot([292, 182, 269], on_value=1, off_value=0, depth=1000)
     img_true_result = list(sess.run(label))
@@ -38,7 +39,7 @@ with tf.device('/cpu:0'):
 
     # test classification
     prob = sess.run(vgg.prob, feed_dict={images: batch, train_mode: False})
-    utils.print_prob_all(prob, './synset.txt')
+    utils.print_prob_all(prob, './synset.txt', 0)
     print()
 
     # simple 1-step training
@@ -64,7 +65,7 @@ with tf.device('/cpu:0'):
     # test classification again, should have a higher probability about tiger
     prob, kernel = sess.run([vgg.prob, vgg.var_dict[('conv1_1', 0)]], feed_dict={images: batch, train_mode: False})
     print()
-    utils.print_prob_all(prob, './synset.txt')
+    utils.print_prob_all(prob, './synset.txt', 0)
 
     # test save
     # vgg.save_npy(sess, './weight/save-vgg19.npy')
