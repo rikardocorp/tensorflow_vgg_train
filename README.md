@@ -6,9 +6,17 @@ We have modified the implementation of <a href="https://github.com/machrisaa/ten
 In addition we have developed a function to perform model training using mini-batches and epochs. The project own us modify the original model and load the weights pre-trained in the required layer.
 
 ### Download weights pre-trained:
+The guiding project (<a href="https://github.com/machrisaa/tensorflow-vgg">tensorflow-vgg</a>) for the development of this repository uses transfer learning with the weights obtained from the training of the VGG network with dataset [Imaginet](http://image-net.org/challenges/LSVRC/2016/index).
+
   -__OPTION A:__ To use the VGG networks, the npy files for [VGG16 NPY](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) or [VGG19 NPY](https://mega.nz/#!xZ8glS6J!MAnE91ND_WyfZ_8mvkuSa2YcA7q-1ehfSm-Q1fxOvvs) has to be downloaded. Uploaded in Mega.nz repositories.
 
   -__OPTION B:__ You can download the pre-trained weights by terminal. You should install [Megatools](https://megatools.megous.com/) and follow the guide in the website <a href=http://luiszambrana.com.ar/bajar-archivos-de-mega-por-terminal/>.
+  
+  -__OPTION C:__ You can also download the files from a repository in dropbox, by terminal:
+  ```
+              vgg16.npy[528MB]: wget https://www.dropbox.com/s/8a8rei66f72um4i/vgg16.npy
+              vgg19.npy[548MB]: wget https://www.dropbox.com/s/691wtp4oq5ip38p/vgg19.npy
+  ```
 
 ### Usage
 Use this to build the VGG object
