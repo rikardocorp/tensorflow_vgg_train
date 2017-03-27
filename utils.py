@@ -3,6 +3,7 @@ import skimage.io
 import skimage.transform
 import numpy as np
 from datetime import datetime
+import sys
 
 
 # synset = [l.strip() for l in open('synset.txt').readlines()]
@@ -70,7 +71,7 @@ def print_accuracy(target, prob):
             count += 1
 
     accuracy = count / total
-    print('\n    RESULTS[ Total:'+str(total)+' | True:'+str(count)+' | False:'+str(total-count)+' | Accuracy:'+str(accuracy)+' ]')
+    print('    results[ Total:'+str(total)+' | True:'+str(count)+' | False:'+str(total-count)+' | Accuracy:'+str(accuracy)+' ]')
     return accuracy
 
 
@@ -112,14 +113,16 @@ def test():
     skimage.io.imsave("./test_data/output.jpg", img)
 
 
-def write_log(data):
+def write_log(total_data, epoch, m_batch, l_rate, accuracy=0, file_npy='None'):
     now = datetime.now()
     id = int(now.timestamp()*1000000)
     date = now.strftime('%d-%m-%Y %H:%m:%S')
+    file = sys.argv[0].split('/')[-1]
 
     f = open("log-server.txt", "a+")
-    f.write('id:{}  date:{}  file:{}  input:{}  epoch:{}  m-batch:{}  l-rate:{}  save:{}\n'.format(id,date,data[0],data[1],data[2],data[3],data[4]))
+    f.write('id:{}  date:{}  file:{}  input:{}  epoch:{}  m-batch:{}  l-rate:{}  accuracy:{:3.3f}  file_npy:{}\n'.format(id,date,file,total_data,epoch,m_batch,l_rate,accuracy,file_npy))
     f.close()
+    print('Create log in log-server.txt:', id)
 
 
 if __name__ == "__main__":

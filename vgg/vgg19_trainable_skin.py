@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import time
 import numpy as np
 from functools import reduce
 
@@ -14,6 +14,7 @@ class Vgg19:
     def __init__(self, vgg19_npy_path=None, trainable=True, dropout=0.5, load_weight_fc=False):
         if vgg19_npy_path is not None:
             self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
+            print("npy file loaded")
         else:
             self.data_dict = None
 
@@ -30,7 +31,8 @@ class Vgg19:
         :param rgb: rgb image [batch, height, width, 3] values scaled [0, 1]
         :param train_mode: a bool tensor, usually a placeholder: if True, dropout will be turned on
         """
-
+        start_time = time.time()
+        print("build model started")
         rgb_scaled = rgb * 255.0
 
         # Convert RGB to BGR
@@ -97,6 +99,7 @@ class Vgg19:
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
         self.data_dict = None
+        print(("build model finished: %ds" % (time.time() - start_time)))
 
     def max_pool(self, bottom, name):
         return tf.nn.max_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name=name)

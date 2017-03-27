@@ -13,10 +13,10 @@ path = '../data/ISB2016/'
 data = pd.read_csv(path + 'ISB_Train_short.csv', header=None)
 train_images = data[0]
 train_labels = data[2]
-epoch = 4
+epoch = 2
 num_class = 2
 learning_rate = 0.01
-mini_batch = 20
+mini_batch = 10
 total_images = len(train_images)
 
 assert (total_images/mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
