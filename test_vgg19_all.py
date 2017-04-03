@@ -18,12 +18,12 @@ path_save_weight = 'weight/save_1.npy'
 # VARIABLES MODEL
 path_data_train = path + 'ISB_Train.csv'
 path_data_test = path + 'ISB_Test.csv'
-mini_batch_train = 15
+mini_batch_train = 10
 mini_batch_test = 10
 epoch = 2
 num_class = 2
 learning_rate = 0.05
-load_weight_fc = True
+load_weight_fc = False
 
 # VALIDATE INPUT DATA
 # assert (total_images / mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
