@@ -9,3 +9,4 @@ private
 __init__.py
 log-server.txt
 .ipynb_checkpoints
+*.ipynb
