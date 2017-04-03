@@ -116,7 +116,7 @@ def test():
 def write_log(total_data, epoch, m_batch, l_rate, accuracy=0, file_npy='None'):
     now = datetime.now()
     id = int(now.timestamp()*1000000)
-    date = now.strftime('%d-%m-%Y %H:%m:%S')
+    date = now.strftime('%d-%m-%Y %H:%M:%S')
     file = sys.argv[0].split('/')[-1]
 
     f = open("log-server.txt", "a+")
