@@ -23,7 +23,6 @@ class Vgg19:
         self.dropout = dropout
         self.load_weight_fc = load_weight_fc
 
-
     def build(self, rgb, train_mode=None):
         """
         load variable from npy to build the vgg

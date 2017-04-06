@@ -5,7 +5,11 @@ import time
 import tensorflow as tf
 import utils
 import os
+
+# importamos la arquitectura de la red
 from vgg import vgg19_trainable_skin as vgg19
+
+# importamos la clase Dataset para generar los batch
 from datasetTools import Dataset
 
 # GLOBAL VARIABLES
@@ -23,7 +27,15 @@ mini_batch_test = 10
 epoch = 2
 num_class = 2
 learning_rate = 0.05
+
+
+# Variable para cargar los pesos de la capa fullConnect
+# False : Cuando modificamos las capas fc para que el modelo clasifique un nuevo tipo de datos
+# True  : Cuando ya contamos con un archivo de pesos entrenados .npy de la nueva red podemos cargarlos
+# Nota, siempre que utilicemos inicialmente los pesos originales del archivo vgg19.npy debemos setear la variable en False
+# ya que este archivo almacena los pesos de la red vgg original, al cargarlos en nuestra red ocurrira un error.
 load_weight_fc = False
+
 
 # VALIDATE INPUT DATA
 # assert (total_images / mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
@@ -34,31 +46,52 @@ assert os.path.exists(path_data_test), 'No existe el archivo con los datos de pr
 # assert os.path.exists(path_load_weight), 'No existe el archivo con pesos ' + path_load_weight
 
 
+# Función, fase de test
 def test_model(sess_test, objData):
 
+    # sess_test : session en tensorflow
+    # objData   : datos de test
     total = objData.total_images
     mbach = objData.minibatch
     itertotal = int(total/mbach)
     accuracy = 0
 
+    # Iteraciones por Batch, en cada iteracion la session de tensorflow procesa los 'n' datos de entrada
+    # donde 'n' es el 'mini_batch_test'
     print('\n# PHASE: Test classification')
     for i in range(itertotal):
+
+        # Generamos el batch y sus respectivas etiquetas
+        # el batch generado contiene las 'n' primeras imagenes
         batch, label = objData.generate_batch()
+
+        # ejecutamos el grafo de tensorflow y almacenamos el vector de la ultima capa
         prob = sess_test.run(vgg.prob, feed_dict={vgg_batch: batch, train_mode: False})
-        # utils.print_prob_all(prob, path_list_labels, top=0)
+
+        # Acumulamos la presicion de cada iteracion, para despues hacer un promedio
         accuracy = accuracy + utils.print_accuracy(label, prob)
+
+        # hacemos que el batch apunte a los siguiente grupo de imagenes de tamaño 'n'
         objData.next_batch()
 
+    # promediamos la presicion total
     accuracy_final = accuracy/itertotal
     print('    Accuracy total: ', str(accuracy_final))
 
     return accuracy_final
 
 
+# Funcion, fase de entrenamiento
 def train_model(sess_train, objData):
 
+    # sess_test : session en tensorflow
+    # objData   : datos de entrenamiento
+
+    # Funciones para optimizar y entrenar el modelo
     total = objData.total_images
+    # Promedio cuadrado : ((x - xi)^2)/n
     cost = tf.reduce_mean((vgg.prob - vgg_label) ** 2)
+    # Optimizador del error, gradiente descendiente
     train = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
 
     print('\n# PHASE: Training model')
@@ -106,8 +139,13 @@ if __name__ == '__main__':
         train_model(sess_train=sess, objData=data_train)
         accuracy = test_model(sess_test=sess, objData=data_test)
 
-        # SAVE LOG:
-        utils.write_log(total_data=data_train.total_images,epoch=epoch,m_batch=mini_batch_train,l_rate=learning_rate,accuracy=accuracy,file_npy=path_load_weight)
+        # SAVE LOG: Genera un registro en el archivo log-server.txt
+        utils.write_log(total_data=data_train.total_images,
+                        epoch=epoch,
+                        m_batch=mini_batch_train,
+                        l_rate=learning_rate,
+                        accuracy=accuracy,
+                        file_npy=path_load_weight)
 
         # SAVE WEIGHTs
         vgg.save_npy(sess, path_save_weight)

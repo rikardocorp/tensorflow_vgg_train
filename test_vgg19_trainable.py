@@ -20,8 +20,6 @@ batch3 = img3.reshape((1, 224, 224, 3))
 batch = np.concatenate((batch1, batch2, batch3), 0)
 
 with tf.Session() as sess:
-    # with tf.device('/cpu:0'):
-    #     sess = tf.Session()
 
     label = tf.one_hot([292, 182, 269], on_value=1, off_value=0, depth=1000)
     img_true_result = list(sess.run(label))
