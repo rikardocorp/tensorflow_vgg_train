@@ -18,6 +18,11 @@ The guiding project (<a href="https://github.com/machrisaa/tensorflow-vgg">tenso
               vgg19.npy[548MB]: wget https://www.dropbox.com/s/691wtp4oq5ip38p/vgg19.npy
   ```
 
+### Project Files
+ - The files `test_vgg16.py`, `test_vgg19.py` are simple examples, that can be executed only by cloning the project.
+ - The file `test_vgg19_trainable.py` is a simple example of test and training of a CNN model. Also can be executed only by cloning the project
+ - The file `test_vgg19_all.py` is a complete classification model that require other files and a dataset more elaborate.
+
 ### Usage
 Use this to build the VGG object
 ```
@@ -47,7 +52,7 @@ All the VGG layers (tensors) can then be accessed using the vgg object. For exam
 The `test_vgg16.py` and `test_vgg19.py` contain the sample usage.
 
 ### Load Dataset
-El modulo para cargar un dataset se encuentra en el archivo 'test_vgg19_train_mbatch.py', para esto necesitamos tres archivos indispensable:
-  - *data/[image].jpg:* The directory that contains the input images
-  - *data-train.csv:* The file containing the list of all training images. This contains two main fields [ 'image name' 'tag or class']
-  - *synset.txt:* This file contains the name of all the classes of the data set sorted by the tag number
+The class for loading a dataset and generating sub sets for the minibatchs is in the file 'dataseTools.py', this class requires three input data:
+  - *data/[image].jpg:* The directory that contains the input images.
+  - *data-train.csv:* The file containing the list of all training images. This contains two main fields [ 'image name (string)','class (string)','tag or class (int)'].
+  - *minibatch:* This variable stores the size of the minibatch.
