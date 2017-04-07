@@ -35,27 +35,30 @@ class Dataset:
         path_data: ruta del archivo csv que almacena el nombre de la imagen y su etiqueta
         path_dir_images: directorio donde se encuentran las imagenes
         minibatch: es el tamaño del conjunto de imagenes 
+        cols: son los indices de las columnas del 'nombre de la imagen' y el 'label o clase'
     """
 
-    def __init__(self, path_data='', path_dir_images='', minibatch=25):
+    def __init__(self, path_data='', path_dir_images='', minibatch=25, cols=[], restrict=True):
 
         assert os.path.exists(path_data), 'No existe el archivo con los datos de entrada ' + path_data
 
         self.path_data = path_data
         self.dir_images = path_dir_images
         self.minibatch = minibatch
+        self.cols = cols
 
         # leemos el archivo csv y guardamos las columnas 0 y 2 (nombre de imagen y etiqueta respectivamente)
         data = pd.read_csv(path_data, header=None)
-        self.images = data[0]
-        self.labels = data[2]
-        self.total_images = len(data[0])
+        self.images = data[cols[0]]
+        self.labels = data[cols[1]]
+        self.total_images = len(data[cols[0]])
 
         # inicializamos los punteros de la data
         self.start = 0
         self.end = minibatch
         self.batch = []
-        assert (self.total_images / self.minibatch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada.'
+        if restrict is True:
+            assert (self.total_images / self.minibatch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada.'
 
         # Realizamos un reordenamiento por defecto
         self.shuffler()
@@ -96,6 +99,23 @@ class Dataset:
             self.end = self.end + self.minibatch
 
     #
+    # Recorre de manera especial la lista para la fase de entrenamiento, cuando no existe la restriccion del minibatch
+    def next_batch_test(self):
+
+        dif = self.total_images - self.end
+        dif_div = dif/self.minibatch
+
+        if dif_div > 1:
+            self.start = self.start + self.minibatch
+            self.end = self.end + self.minibatch
+        elif dif_div == 0:
+            self.start = 0
+            self.end = self.minibatch
+        elif dif_div < 1:
+            self.start = self.start + self.minibatch
+            self.end = self.total_images
+
+    #
     # Recorre la lista de imagenes de adelante hacia atras
     def prev_batch(self):
 
@@ -113,8 +133,9 @@ class Dataset:
     #
     # Reordena la lista de imagenes, simmula la aleatoridad en la eleccion de batchs
     def shuffler(self):
+        cols = self.cols
         df = pd.read_csv(self.path_data, header=None)
         df = df.reindex(np.random.permutation(df.index))
         df = pd.DataFrame(df).reset_index(drop=True)
-        self.images = df[0]
-        self.labels = df[2]
+        self.images = df[cols[0]]
+        self.labels = df[cols[1]]
