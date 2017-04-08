@@ -72,7 +72,7 @@ def print_accuracy(target, prob):
 
     accuracy = count / total
     print('    results[ Total:'+str(total)+' | True:'+str(count)+' | False:'+str(total-count)+' | Accuracy:'+str(accuracy)+' ]')
-    return accuracy
+    return count
 
 
 def load_image2(path, height=None, width=None):

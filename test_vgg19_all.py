@@ -65,7 +65,7 @@ def test_model(sess_test, objData):
     else:
         itertotal = int(total/mbach)
 
-    accuracy = 0
+    count_success = 0
 
     # Iteraciones por Batch, en cada iteracion la session de tensorflow procesa los 'n' datos de entrada
     # donde 'n' es el 'mini_batch_test'
@@ -83,13 +83,14 @@ def test_model(sess_test, objData):
         # utils.save_layer_output(layer, label, name='relu6')
 
         # Acumulamos la presicion de cada iteracion, para despues hacer un promedio
-        accuracy = accuracy + utils.print_accuracy(label, prob)
+        count_success = count_success + utils.print_accuracy(label, prob)
 
         # hacemos que el batch apunte a los siguiente grupo de imagenes de tamaño 'n'
         objData.next_batch_test()
 
     # promediamos la presicion total
-    accuracy_final = accuracy/itertotal
+    accuracy_final = count_success/total
+    print('    Success total: ', str(count_success))
     print('    Accuracy total: ', str(accuracy_final))
     return accuracy_final
 
