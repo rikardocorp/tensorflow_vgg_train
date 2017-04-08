@@ -60,6 +60,7 @@ class Dataset:
         if restrict is True:
             assert (self.total_images / self.minibatch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada.'
 
+        self.total_batchs = int(self.total_images / self.minibatch)
         # Realizamos un reordenamiento por defecto
         self.shuffler()
 

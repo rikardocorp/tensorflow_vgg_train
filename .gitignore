@@ -16,3 +16,4 @@ include/
 lib/
 pip-selfcheck.json
 share/
+features/*

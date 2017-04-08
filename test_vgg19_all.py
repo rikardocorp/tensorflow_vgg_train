@@ -3,14 +3,19 @@ Expert tester for the vgg19_trainable
 """
 import time
 import tensorflow as tf
-import utils
 import os
 
-# importamos la arquitectura de la red
-from vgg import vgg19_trainable_skin as vgg19
+switch_server = False
 
-# importamos la clase Dataset para generar los batch
-from datasetTools import Dataset
+if switch_server is True:
+    import utils
+    from vgg import vgg19_trainable_skin as vgg19
+    from datasetTools import Dataset
+else:
+    from tensorflow_vgg_train import utils
+    from tensorflow_vgg_train.vgg import vgg19_trainable_skin as vgg19
+    from tensorflow_vgg_train.datasetTools import Dataset
+
 
 # GLOBAL VARIABLES
 path = '../data/ISB2016/'
@@ -23,8 +28,8 @@ path_save_weight = 'weight/save_1.npy'
 # VARIABLES MODEL
 path_data_train = path + 'ISB_Train.csv'
 path_data_test = path + 'ISB_Test.csv'
-mini_batch_train = 15
-mini_batch_test = 10
+mini_batch_train = 30
+mini_batch_test = 20
 epoch = 2
 num_class = 2
 learning_rate = 0.01
@@ -72,7 +77,10 @@ def test_model(sess_test, objData):
         batch, label = objData.generate_batch()
 
         # ejecutamos el grafo de tensorflow y almacenamos el vector de la ultima capa
-        prob = sess_test.run(vgg.prob, feed_dict={vgg_batch: batch, train_mode: False})
+        prob, layer = sess_test.run([vgg.prob, vgg.relu6], feed_dict={vgg_batch: batch, train_mode: False})
+
+        # save output of a layer
+        # utils.save_layer_output(layer, label, name='relu6')
 
         # Acumulamos la presicion de cada iteracion, para despues hacer un promedio
         accuracy = accuracy + utils.print_accuracy(label, prob)
@@ -83,7 +91,6 @@ def test_model(sess_test, objData):
     # promediamos la presicion total
     accuracy_final = accuracy/itertotal
     print('    Accuracy total: ', str(accuracy_final))
-
     return accuracy_final
 
 
@@ -93,7 +100,7 @@ def train_model(sess_train, objData):
     # sess_test : session en tensorflow
     # objData   : datos de entrenamiento
 
-    # Funciones para optimizar y entrenar el modelo
+    # Optimizar y entrenar el modelo
     total = objData.total_images
     # Promedio cuadrado : ((x - xi)^2)/n
     cost = tf.reduce_mean((vgg.prob - vgg_label) ** 2)
@@ -101,25 +108,27 @@ def train_model(sess_train, objData):
     train = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
 
     print('\n# PHASE: Training model')
-    t0 = time.time()
-    for i in range(epoch):
-        batch, label = objData.generate_batch()
+    for ep in range(epoch):
+        print('\n     Epoch:', ep)
+        t0 = time.time()
+        for i in range(objData.total_batchs):
+            batch, label = objData.generate_batch()
 
-        # Generate the 'one hot' or labels
-        label = tf.one_hot([li for li in label], on_value=1, off_value=0, depth=num_class)
-        label = list(sess_train.run(label))
-        # Run training
-        t_start = time.time()
-        sess_train.run(train, feed_dict={vgg_batch: batch, vgg_label: label, train_mode: True})
-        t_end = time.time()
-        # Next slice batch
-        objData.next_batch()
-        print("    Iteration: %d train on batch time: %7.3f seg." % (i, (t_end - t_start)))
+            # Generate the 'one hot' or labels
+            label = tf.one_hot([li for li in label], on_value=1, off_value=0, depth=num_class)
+            label = list(sess_train.run(label))
+            # Run training
+            t_start = time.time()
+            sess_train.run(train, feed_dict={vgg_batch: batch, vgg_label: label, train_mode: True})
+            t_end = time.time()
+            # Next slice batch
+            objData.next_batch()
+            print("        > Minibatch: %d train on batch time: %7.3f seg." % (i, (t_end - t_start)))
 
-    t1 = time.time()
-    print("    Batch size: %d" % mini_batch_train)
-    print("    Iterations: %d" % epoch)
-    print("    Time per iteration: %7.3f seg." % ((t1 - t0) / epoch))
+        t1 = time.time()
+        # print("        Batch size: %d" % mini_batch_train)
+        print("        Time epoch: %7.3f seg." % (t1 - t0))
+        print("        Time per iteration: %7.3f seg." % ((t1 - t0) / epoch))
 
 
 if __name__ == '__main__':

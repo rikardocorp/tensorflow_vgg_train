@@ -125,5 +125,17 @@ def write_log(total_data, epoch, m_batch, l_rate, accuracy=0, file_npy='None'):
     print('Create log in log-server.txt:', id)
 
 
+def save_layer_output(output, label, name="layer"):
+    total = len(label)
+    lab = np.reshape(label, (total, 1))
+    res = np.concatenate((output, lab), axis=1)
+
+    f = open("features/output_"+name+".csv", "a+")
+    for i in range(total):
+        f.write(",".join(map(str, res[i])) + "\n")
+    f.close()
+    print("    Save feature extractor, "+name)
+
+
 if __name__ == "__main__":
     test()
