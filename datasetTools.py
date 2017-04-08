@@ -38,7 +38,7 @@ class Dataset:
         cols: son los indices de las columnas del 'nombre de la imagen' y el 'label o clase'
     """
 
-    def __init__(self, path_data='', path_dir_images='', minibatch=25, cols=[], restrict=True):
+    def __init__(self, path_data='', path_dir_images='', minibatch=25, cols=[], restrict=True, random=True):
 
         assert os.path.exists(path_data), 'No existe el archivo con los datos de entrada ' + path_data
 
@@ -61,8 +61,10 @@ class Dataset:
             assert (self.total_images / self.minibatch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada.'
 
         self.total_batchs = int(self.total_images / self.minibatch)
+
         # Realizamos un reordenamiento por defecto
-        self.shuffler()
+        if random is True:
+            self.shuffler()
 
     #
     # Generamos el batch en la posicion actual donde se encuentras los punteros self.start y self.end
@@ -75,7 +77,7 @@ class Dataset:
 
         # cargamos las imagenes y estas son tratadas para darles el tamaño requerido
         for i in range(start, end):
-            # print(self.images[i], i)
+            print(self.images[i], i)
             img = utils.load_image(self.dir_images + self.images[i] + '.jpg')[:, :, :3]
             batch_list.append(img.reshape((1, 224, 224, 3)))
             label_list.append(self.labels[i])
@@ -106,7 +108,7 @@ class Dataset:
         dif = self.total_images - self.end
         dif_div = dif/self.minibatch
 
-        if dif_div > 1:
+        if dif_div >= 1:
             self.start = self.start + self.minibatch
             self.end = self.end + self.minibatch
         elif dif_div == 0:

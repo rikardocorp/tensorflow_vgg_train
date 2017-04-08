@@ -29,10 +29,10 @@ path_save_weight = 'weight/save_1.npy'
 path_data_train = path + 'ISB_Train.csv'
 path_data_test = path + 'ISB_Test.csv'
 mini_batch_train = 30
-mini_batch_test = 20
+mini_batch_test = 30
 epoch = 2
 num_class = 2
-learning_rate = 0.01
+learning_rate = 0.001
 
 
 # Variable para cargar los pesos de la capa fullConnect
@@ -60,7 +60,7 @@ def test_model(sess_test, objData):
     total = objData.total_images
     mbach = objData.minibatch
 
-    if total/mbach > 1:
+    if ((total/mbach) - int(total/mbach)) > 0:
         itertotal = int(total/mbach) + 1
     else:
         itertotal = int(total/mbach)
@@ -98,7 +98,7 @@ def test_model(sess_test, objData):
 # Funcion, fase de entrenamiento
 def train_model(sess_train, objData):
 
-    # sess_test : session en tensorflow
+    # sess_train : session en tensorflow
     # objData   : datos de entrenamiento
 
     # Optimizar y entrenar el modelo
@@ -135,8 +135,8 @@ def train_model(sess_train, objData):
 if __name__ == '__main__':
 
     # GENERATE DATA
-    data_train = Dataset(path_data=path_data_train, path_dir_images=path_dir_image_train, minibatch=mini_batch_train, cols=[0,2])
-    data_test = Dataset(path_data=path_data_test, path_dir_images=path_dir_image_test, minibatch=mini_batch_test, cols=[0,1], restrict=False)
+    data_train = Dataset(path_data=path_data_train, path_dir_images=path_dir_image_train, minibatch=mini_batch_train, cols=[0, 2])
+    data_test = Dataset(path_data=path_data_test, path_dir_images=path_dir_image_test, minibatch=mini_batch_test, cols=[0, 1], restrict=False, random=False)
     accuracy = 0
 
     with tf.Session() as sess:
