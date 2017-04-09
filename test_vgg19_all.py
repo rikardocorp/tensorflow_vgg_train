@@ -28,9 +28,9 @@ path_save_weight = 'weight/save_1.npy'
 # VARIABLES MODEL
 path_data_train = path + 'ISB_Train.csv'
 path_data_test = path + 'ISB_Test.csv'
-mini_batch_train = 30
+mini_batch_train = 25
 mini_batch_test = 30
-epoch = 2
+epoch = 40
 num_class = 2
 learning_rate = 0.001
 
