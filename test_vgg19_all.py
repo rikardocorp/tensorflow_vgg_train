@@ -28,11 +28,11 @@ path_save_weight = 'weight/save_1.npy'
 # VARIABLES MODEL
 path_data_train = path + 'ISB_Train.csv'
 path_data_test = path + 'ISB_Test.csv'
-mini_batch_train = 25
+mini_batch_train = 20
 mini_batch_test = 30
 epoch = 40
 num_class = 2
-learning_rate = 0.001
+learning_rate = 0.01
 
 
 # Variable para cargar los pesos de la capa fullConnect
@@ -101,13 +101,6 @@ def train_model(sess_train, objData):
     # sess_train : session en tensorflow
     # objData   : datos de entrenamiento
 
-    # Optimizar y entrenar el modelo
-    total = objData.total_images
-    # Promedio cuadrado : ((x - xi)^2)/n
-    cost = tf.reduce_mean((vgg.prob - vgg_label) ** 2)
-    # Optimizador del error, gradiente descendiente
-    train = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-
     print('\n# PHASE: Training model')
     for ep in range(epoch):
         print('\n     Epoch:', ep)
@@ -120,7 +113,7 @@ def train_model(sess_train, objData):
             label = list(sess_train.run(label))
             # Run training
             t_start = time.time()
-            sess_train.run(train, feed_dict={vgg_batch: batch, vgg_label: label, train_mode: True})
+            sess_train.run(vgg.train, feed_dict={vgg_batch: batch, vgg_label: label, train_mode: True})
             t_end = time.time()
             # Next slice batch
             objData.next_batch()
@@ -147,8 +140,8 @@ if __name__ == '__main__':
         train_mode = tf.placeholder(tf.bool)
 
         # Initialize of the model VGG19
-        vgg = vgg19.Vgg19(path_load_weight, load_weight_fc=load_weight_fc)
-        vgg.build(vgg_batch, train_mode)
+        vgg = vgg19.Vgg19(path_load_weight, learning_rate=learning_rate, load_weight_fc=load_weight_fc)
+        vgg.build(vgg_batch, vgg_label, train_mode)
 
         sess.run(tf.global_variables_initializer())
         test_model(sess_test=sess, objData=data_test)

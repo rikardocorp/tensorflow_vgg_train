@@ -5,24 +5,26 @@ import numpy as np
 
 class AEncoder:
 
-    def __init__(self, npy_path=None, trainable=True, dropout=0.5, load_weight_ae=False):
+    def __init__(self, npy_path=None, trainable=True, learning_rate=0.001, dropout=0.5, load_weight_ae=False):
         if npy_path is not None:
             self.data_dict = np.load(npy_path, encoding='latin1').item()
             print("npy file loaded")
         else:
             self.data_dict = None
+            print("random weight")
 
         self.var_dict = {}
         self.trainable = trainable
+        self.learning_rate = learning_rate
         self.dropout = dropout
-        self.load_weight_fc = load_weight_ae
+        self.load_weight_ae = load_weight_ae
 
-    def build(self, input, train_mode=None):
+    def build(self, input_batch, train_mode=None):
 
         start_time = time.time()
         print("build model started")
 
-        self.fc1 = self.fc_layer(input, 4096, 1024, "fc1")
+        self.fc1 = self.fc_layer(input_batch, 4096, 2048, "fc1")
         self.relu1 = tf.nn.relu(self.fc1)
 
         # DROPOUT
@@ -33,7 +35,17 @@ class AEncoder:
             # train_mode: None -> Default [test or classification]
             self.relu1 = tf.nn.dropout(self.relu1, self.dropout)
 
-        self.fc2 = self.fc_layer(self.relu1, 1024, 4096, "fc8")
+        self.prob = self.fc_layer(self.relu1, 2048, 4096, "prob")
+        # self.prob = tf.nn.relu(self.fc2)
+        # self.errorDecode = tf.reduce_sum(abs(self.prob - input_batch), 1)
+        self.errorDecode = tf.reduce_sum(tf.square(self.prob - input_batch), 1)
+
+        self.cost = tf.reduce_mean((self.prob - input_batch) ** 2)
+        self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
+
+
+        self.data_dict = None
+        print(("build model finished: %ds" % (time.time() - start_time)))
 
     def fc_layer(self, bottom, in_size, out_size, name):
         with tf.variable_scope(name):
@@ -53,7 +65,7 @@ class AEncoder:
         return weights, biases
 
     def get_var_fc(self, initial_value, name, idx, var_name):
-        if self.data_dict is not None and name in self.data_dict and self.load_weight_fc is True:
+        if self.data_dict is not None and name in self.data_dict and self.load_weight_ae is True:
             value = self.data_dict[name][idx]
         else:
             value = initial_value

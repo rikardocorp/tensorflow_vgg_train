@@ -11,7 +11,7 @@ class Vgg19:
     A trainable version VGG19.
     """
 
-    def __init__(self, vgg19_npy_path=None, trainable=True, dropout=0.5, load_weight_fc=False):
+    def __init__(self, vgg19_npy_path=None, trainable=True, learning_rate=0.05, dropout=0.5, load_weight_fc=False):
         if vgg19_npy_path is not None:
             self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
             print("npy file loaded")
@@ -20,10 +20,11 @@ class Vgg19:
 
         self.var_dict = {}
         self.trainable = trainable
+        self.learning_rate = learning_rate
         self.dropout = dropout
         self.load_weight_fc = load_weight_fc
 
-    def build(self, rgb, train_mode=None):
+    def build(self, rgb, target, train_mode=None):
         """
         load variable from npy to build the vgg
 
@@ -96,6 +97,11 @@ class Vgg19:
 
         self.fc8 = self.fc_layer(self.relu7, 1024, 2, "fc8")
         self.prob = tf.nn.softmax(self.fc8, name="prob")
+
+        # COST - TRAINING
+        # if train_mode is True:
+        self.cost = tf.reduce_mean((self.prob - target) ** 2)
+        self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
 
         self.data_dict = None
         print(("build model finished: %ds" % (time.time() - start_time)))
