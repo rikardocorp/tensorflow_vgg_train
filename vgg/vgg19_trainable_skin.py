@@ -84,7 +84,8 @@ class Vgg19:
             # train_mode: None -> Default [test or classification]
             self.relu6 = tf.nn.dropout(self.relu6, self.dropout)
 
-        self.fc7 = self.fc_layer(self.relu6, 4096, 1024, "fc7")
+        # self.fc7 = self.fc_layer(self.relu6, 4096, 1024, "fc7")
+        self.fc7 = self.fc_layer(self.relu6, 4096, 1536, "fc7")
         self.relu7 = tf.nn.relu(self.fc7)
 
         # DROPOUT
@@ -95,7 +96,8 @@ class Vgg19:
             # train_mode: None -> Default [test or classification]
             self.relu7 = tf.nn.dropout(self.relu7, self.dropout)
 
-        self.fc8 = self.fc_layer(self.relu7, 1024, 2, "fc8")
+        # self.fc8 = self.fc_layer(self.relu7, 1024, 2, "fc8")
+        self.fc8 = self.fc_layer(self.relu7, 1536, 2, "fc8")
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
         # COST - TRAINING
