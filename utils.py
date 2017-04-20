@@ -3,19 +3,21 @@ import skimage.io
 import skimage.transform
 import numpy as np
 from datetime import datetime
-import sys
-
+import sys, os
+import itertools
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 # synset = [l.strip() for l in open('synset.txt').readlines()]
 
 
 # returns image of shape [224, 224, 3]
 # [height, width, depth]
-def load_image(path):
+def load_image(path, scale=255, xrange=[0, 1]):
     # load image
     img = skimage.io.imread(path)
-    img = img / 255.0
-    assert (0 <= img).all() and (img <= 1.0).all()
+    img = img / scale
+    assert (xrange[0] <= img).all() and (img <= xrange[1]).all()
     # print "Original Image Shape: ", img.shape
     # we crop image from center
     short_edge = min(img.shape[:2])
@@ -25,6 +27,37 @@ def load_image(path):
     # resize to 224, 224
     resized_img = skimage.transform.resize(crop_img, (224, 224))
     return resized_img
+
+
+def save_image(path_source, path_dest, name_image, transform=False, path_csv=None):
+
+    name, ext = name_image.split('.')
+
+    f = open(path_csv, "a+")
+
+    if transform is False:
+
+        img = load_image(path_source+name_image)
+        skimage.io.imsave(path_dest + name + '.' + ext, img)
+        f.write(",".join(map(str, [name, 0])) + "\n")
+
+    else:
+        img = load_image(path_source + name_image)
+        img90 = skimage.transform.rotate(img, 90, resize=True)
+        img180 = skimage.transform.rotate(img, 180, resize=True)
+        img270 = skimage.transform.rotate(img, 270, resize=True)
+
+        skimage.io.imsave(path_dest + name+'_0.'+ext, img)
+        f.write(",".join(map(str, [name+'_0', 1])) + "\n")
+        skimage.io.imsave(path_dest + name+'_90.'+ext, img90)
+        f.write(",".join(map(str, [name+'_90', 1])) + "\n")
+        skimage.io.imsave(path_dest + name+'_180.'+ext, img180)
+        f.write(",".join(map(str, [name+'_180', 1])) + "\n")
+        skimage.io.imsave(path_dest + name+'_270.'+ext, img270)
+        f.write(",".join(map(str, [name+'_270', 1])) + "\n")
+
+    f.close()
+    print('Save image: ', name_image)
 
 
 # returns the top1 string
@@ -60,7 +93,7 @@ def print_prob_all(prob, file_path, top=5):
             print("    Top" + str(top) + ": ", topn)
 
 
-def print_accuracy(target, prob):
+def print_accuracy(target, prob, matrix_confusion=None, predicted=[]):
 
     total = len(target)
     count = 0
@@ -70,9 +103,12 @@ def print_accuracy(target, prob):
         if target[i] == true_result:
             count += 1
 
+        predicted.append(true_result)
+        matrix_confusion[target[i]][true_result] = matrix_confusion[target[i]][true_result] + 1
+
     accuracy = count / total
     print('    results[ Total:'+str(total)+' | True:'+str(count)+' | False:'+str(total-count)+' | Accuracy:'+str(accuracy)+' ]')
-    return count
+    return count, matrix_confusion, predicted
 
 
 def load_image2(path, height=None, width=None):
@@ -135,6 +171,49 @@ def save_layer_output(output, label, name="layer"):
         f.write(",".join(map(str, res[i])) + "\n")
     f.close()
     print("    Save feature extractor, "+name)
+
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+
+def directory_exist(pathname):
+    directory = Path(pathname)
+    if not directory.exists():
+        os.makedirs(pathname)
+        print('El directorio {0} ha sido creado.'.format(pathname))
+    else:
+        print('El directorio {0} existe.'.format(pathname))
 
 
 if __name__ == "__main__":

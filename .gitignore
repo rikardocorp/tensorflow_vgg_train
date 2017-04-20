@@ -17,3 +17,4 @@ lib/
 pip-selfcheck.json
 share/
 features/*
+MNIST_data/

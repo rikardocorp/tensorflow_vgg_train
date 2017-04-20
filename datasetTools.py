@@ -27,6 +27,7 @@ import os
 import numpy as np
 import pandas as pd
 import utils
+# from tensorflow_vgg_train import utils
 
 # ----------------------- #
 # MANAGE DATASET FROM NPY #
@@ -153,13 +154,12 @@ class Dataset:
 
 class Dataset_csv:
 
-    def __init__(self, path_data=[], minibatch=25, cols=[], restrict=True, random=True):
+    def __init__(self, path_data=[], minibatch=25, restrict=True, random=True, max_value=None, media_mean=None):
 
         assert len(path_data) > 0, 'No se ingresaron archivos con los datos de entrada.'
 
         self.path_data = path_data
         self.minibatch = minibatch
-        self.cols = cols
 
         # leemos el archivo csv y guardamos las columnas 0 y 2 (nombre de imagen y etiqueta respectivamente)
         df = []
@@ -170,11 +170,20 @@ class Dataset_csv:
         self.data = pd.concat(df).reset_index(drop=True)
 
         self.inputs = self.data.iloc[:, :-1]
-        self.amax = self.inputs.max().max()
+
+        if max_value is None:
+            self.amax = self.inputs.max().max()
+        else:
+            self.amax = max_value
+
         self.inputs = self.inputs / self.amax
         self.labels = self.data.iloc[:, -1:]
         self.total_inputs = len(self.inputs)
-        self.media_mean = np.mean(self.inputs, axis=0)
+
+        if media_mean is None:
+            self.media_mean = np.mean(self.inputs, axis=0)
+        else:
+            self.media_mean = media_mean
 
         # inicializamos los punteros de la data
         self.start = 0
@@ -213,7 +222,7 @@ class Dataset_csv:
             # print(i)
             orig = self.inputs.iloc[i, :].values
             mean = self.media_mean
-            batch_list.append(orig - mean)
+            batch_list.append(orig)
             label_list.append(self.labels.iloc[i, :].values[0])
 
         return np.reshape(batch_list, (countBatch, countCols)), label_list

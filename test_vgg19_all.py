@@ -4,6 +4,8 @@ Expert tester for the vgg19_trainable
 import time
 import tensorflow as tf
 import os
+import numpy as np
+from sklearn.metrics import confusion_matrix
 
 switch_server = False
 
@@ -19,7 +21,7 @@ else:
 
 # GLOBAL VARIABLES
 path = '../data/ISB2016/'
-path_dir_image_train = path + "image_train/"
+path_dir_image_train = path + "image_train_complete/"
 path_dir_image_test = path + "image_test/"
 path_list_labels = path + 'synset_skin.txt'
 path_load_weight = 'weight/vgg19.npy'
@@ -28,11 +30,11 @@ path_save_weight = 'weight/save_1.npy'
 # VARIABLES MODEL
 path_data_train = path + 'ISB_Train.csv'
 path_data_test = path + 'ISB_Test.csv'
-mini_batch_train = 20
+mini_batch_train = 25
 mini_batch_test = 30
-epoch = 40
+epoch = 50
 num_class = 2
-learning_rate = 0.01
+learning_rate = 0.001
 
 
 # Variable para cargar los pesos de la capa fullConnect
@@ -66,6 +68,8 @@ def test_model(sess_test, objData):
         itertotal = int(total/mbach)
 
     count_success = 0
+    count_by_class = np.zeros([num_class, num_class])
+    prob_predicted = []
 
     # Iteraciones por Batch, en cada iteracion la session de tensorflow procesa los 'n' datos de entrada
     # donde 'n' es el 'mini_batch_test'
@@ -83,15 +87,22 @@ def test_model(sess_test, objData):
         # utils.save_layer_output(layer, label, name='relu6')
 
         # Acumulamos la presicion de cada iteracion, para despues hacer un promedio
-        count_success = count_success + utils.print_accuracy(label, prob)
+        count, count_by_class, prob_predicted = utils.print_accuracy(label, prob, matrix_confusion=count_by_class, predicted=prob_predicted)
+        count_success = count_success + count
 
         # hacemos que el batch apunte a los siguiente grupo de imagenes de tamaño 'n'
         objData.next_batch_test()
 
     # promediamos la presicion total
     accuracy_final = count_success/total
+    print('\n# STATUS: Confusion Matrix')
+    print(count_by_class)
     print('    Success total: ', str(count_success))
     print('    Accuracy total: ', str(accuracy_final))
+
+    # a = objData.labels.tolist()
+    # b = prob_predicted
+    # cm = confusion_matrix(a, b)
     return accuracy_final
 
 
@@ -128,7 +139,7 @@ def train_model(sess_train, objData):
 if __name__ == '__main__':
 
     # GENERATE DATA
-    data_train = Dataset(path_data=path_data_train, path_dir_images=path_dir_image_train, minibatch=mini_batch_train, cols=[0, 2])
+    data_train = Dataset(path_data=path_data_train, path_dir_images=path_dir_image_train, minibatch=mini_batch_train, cols=[0, 1])
     data_test = Dataset(path_data=path_data_test, path_dir_images=path_dir_image_test, minibatch=mini_batch_test, cols=[0, 1], restrict=False, random=False)
     accuracy = 0
 
