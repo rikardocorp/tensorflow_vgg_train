@@ -60,6 +60,19 @@ def save_image(path_source, path_dest, name_image, transform=False, path_csv=Non
     print('Save image: ', name_image)
 
 
+def save_image_flip(path_source, path_dest, name_image, path_csv=None):
+    name, ext = name_image.split('.')
+    f = open(path_csv, "a+")
+
+    img = load_image(path_source + name_image)
+    imgflip = np.fliplr(img)
+    skimage.io.imsave(path_dest + name+'_flip.'+ext, imgflip)
+    f.write(",".join(map(str, [name+'_flip', 1])) + "\n")
+
+    f.close()
+    print('Save image: ', name_image)
+
+
 # returns the top1 string
 def print_prob(prob, file_path, top=5):
     synset = [l.strip() for l in open(file_path).readlines()]
