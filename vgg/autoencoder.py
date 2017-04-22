@@ -32,7 +32,7 @@ class AEncoder:
 
         # Calculamos el error
         self.cost = tf.reduce_sum(tf.pow(input_batch - self.prob, 2))
-        self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
+        self.train = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 
         self.data_dict = None
         print(("build model finished: %ds" % (time.time() - start_time)))
@@ -106,3 +106,18 @@ class AEncoder:
         self.var_dict[(name, idx)] = var
         assert var.get_shape() == initial_value.get_shape()
         return var
+    
+    def save_npy(self, sess, npy_path="./vgg19-save.npy"):
+        assert isinstance(sess, tf.Session)
+
+        data_dict = {}
+
+        for (name, idx), var in list(self.var_dict.items()):
+            var_out = sess.run(var)
+            if name not in data_dict:
+                data_dict[name] = {}
+            data_dict[name][idx] = var_out
+
+        np.save(npy_path, data_dict)
+        print("File saved", npy_path)
+        return npy_path

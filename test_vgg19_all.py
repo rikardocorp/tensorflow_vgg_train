@@ -22,19 +22,19 @@ else:
 # GLOBAL VARIABLES
 path = '../data/ISB2016/'
 path_dir_image_train = path + "image_train_complete/"
-path_dir_image_test = path + "image_test/"
+path_dir_image_test = path + "image_test_complete/"
 path_list_labels = path + 'synset_skin.txt'
 path_load_weight = 'weight/vgg19.npy'
 path_save_weight = 'weight/save_1.npy'
 
 # VARIABLES MODEL
-path_data_train = path + 'ISB_Train.csv'
-path_data_test = path + 'ISB_Test.csv'
-mini_batch_train = 25
+path_data_train = path + 'ISB_Train_complete.csv'
+path_data_test = path + 'ISB_Test_complete.csv'
+mini_batch_train = 20
 mini_batch_test = 30
-epoch = 50
+epoch = 40
 num_class = 2
-learning_rate = 0.001
+learning_rate = 0.0005
 
 
 # Variable para cargar los pesos de la capa fullConnect
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         train_mode = tf.placeholder(tf.bool)
 
         # Initialize of the model VGG19
-        vgg = vgg19.Vgg19(path_load_weight, learning_rate=learning_rate, load_weight_fc=load_weight_fc)
+        vgg = vgg19.Vgg19(path_load_weight, learning_rate=learning_rate, size_layer_fc=1024, load_weight_fc=load_weight_fc)
         vgg.build(vgg_batch, vgg_label, train_mode)
 
         sess.run(tf.global_variables_initializer())

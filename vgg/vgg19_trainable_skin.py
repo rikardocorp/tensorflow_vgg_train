@@ -11,7 +11,7 @@ class Vgg19:
     A trainable version VGG19.
     """
 
-    def __init__(self, vgg19_npy_path=None, trainable=True, learning_rate=0.05, dropout=0.5, load_weight_fc=False):
+    def __init__(self, vgg19_npy_path=None, trainable=True, learning_rate=0.05, dropout=0.5, size_layer_fc=1024, load_weight_fc=False):
         if vgg19_npy_path is not None:
             self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
             print("npy file loaded")
@@ -23,6 +23,7 @@ class Vgg19:
         self.learning_rate = learning_rate
         self.dropout = dropout
         self.load_weight_fc = load_weight_fc
+        self.size_layer = size_layer_fc
 
     def build(self, rgb, target, train_mode=None):
         """
@@ -84,8 +85,7 @@ class Vgg19:
             # train_mode: None -> Default [test or classification]
             self.relu6 = tf.nn.dropout(self.relu6, self.dropout)
 
-        # self.fc7 = self.fc_layer(self.relu6, 4096, 1024, "fc7")
-        self.fc7 = self.fc_layer(self.relu6, 4096, 1536, "fc7")
+        self.fc7 = self.fc_layer(self.relu6, 4096, self.size_layer, "fc7")
         self.relu7 = tf.nn.relu(self.fc7)
 
         # DROPOUT
@@ -96,14 +96,13 @@ class Vgg19:
             # train_mode: None -> Default [test or classification]
             self.relu7 = tf.nn.dropout(self.relu7, self.dropout)
 
-        # self.fc8 = self.fc_layer(self.relu7, 1024, 2, "fc8")
-        self.fc8 = self.fc_layer(self.relu7, 1536, 2, "fc8")
+        self.fc8 = self.fc_layer(self.relu7, self.size_layer, 2, "fc8")
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
         # COST - TRAINING
         # if train_mode is True:
         self.cost = tf.reduce_mean((self.prob - target) ** 2)
-        self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
+        self.train = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 
         self.data_dict = None
         print(("build model finished: %ds" % (time.time() - start_time)))

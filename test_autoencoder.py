@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
         # %%
         # Plot example reconstructions
-        n_examples = 15
+        n_examples = 10
         test_xs, _ = mnist.test.next_batch(n_examples)
         test_xs_norm = np.array(test_xs)
         mask_np = np.random.binomial(1, 1 - noise_level, test_xs.shape)
