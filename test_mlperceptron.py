@@ -11,46 +11,35 @@ switch_server = False
 
 if switch_server is True:
     import utils
-    from vgg import vgg19_trainable_skin as vgg19
-    from datasetTools import Dataset
+    from vgg import mlperceptron as mlp
+    from datasetTools import Dataset_csv
 else:
     from tensorflow_vgg_train import utils
-    from tensorflow_vgg_train.vgg import vgg19_trainable_skin as vgg19
-    from tensorflow_vgg_train.datasetTools import Dataset
+    from tensorflow_vgg_train.vgg import mlperceptron as mlp
+    from tensorflow_vgg_train.datasetTools import Dataset_csv
 
 
 # GLOBAL VARIABLES
-path = '../data/ISB2016/'
-path_dir_image_train = path + "image_train_complete/"
-path_dir_image_test = path + "image_test_complete/"
-path_list_labels = path + 'synset_skin.txt'
-path_load_weight = 'weight/vgg19.npy'
-path_save_weight = 'weight/save_1.npy'
-
-# VARIABLES MODEL
-path_data_train = path + 'ISB_Train_complete.csv'
-path_data_test = path + 'ISB_Test_complete.csv'
+path = 'features/'
+path_data_train = [path+'output_Train_SNC4_relu6.csv']
+path_data_test  = [path+'output_Test_SNC4_relu6.csv']
+path_list_labels = '../data/ISB2016/synset_skin.txt'
+path_load_weight = 'weight/saveMlpB_4.npy'
+path_save_weight = 'weight/saveMlpB_4.npy'
 mini_batch_train = 20
 mini_batch_test = 30
 epoch = 40
 num_class = 2
-learning_rate = 0.0005
+learning_rate = 0.001
 
-
-# Variable para cargar los pesos de la capa fullConnect
-# False : Cuando modificamos las capas fc para que el modelo clasifique un nuevo tipo de datos
-# True  : Cuando ya contamos con un archivo de pesos entrenados .npy de la nueva red podemos cargarlos
-# Nota, siempre que utilicemos inicialmente los pesos originales del archivo vgg19.npy debemos setear la variable en False
-# ya que este archivo almacena los pesos de la red vgg original, al cargarlos en nuestra red ocurrira un error.
-load_weight_fc = False
-
+print(path_data_train)
+print(path_data_test)
 
 # VALIDATE INPUT DATA
 # assert (total_images / mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
-assert os.path.exists(path), 'No existe el directorio de datos ' + path
-assert os.path.exists(path_list_labels), 'No existe el archivo con la lista de labels ' + path_list_labels
-assert os.path.exists(path_data_train), 'No existe el archivo con los datos de entrenamiento ' + path_data_train
-assert os.path.exists(path_data_test), 'No existe el archivo con los datos de pruebas ' + path_data_test
+assert os.path.exists(path), ('No existe el directorio de datos ' + path)
+assert os.path.exists(path_data_train[0]), ('No existe el archivo con los datos de entrenamiento ' + path_data_train)
+assert os.path.exists(path_data_test[0]), ('No existe el archivo con los datos de pruebas ' + path_data_test)
 # assert os.path.exists(path_load_weight), 'No existe el archivo con pesos ' + path_load_weight
 
 
@@ -59,7 +48,7 @@ def test_model(sess_test, objData):
 
     # sess_test : session en tensorflow
     # objData   : datos de test
-    total = objData.total_images
+    total = objData.total_inputs
     mbach = objData.minibatch
 
     if ((total/mbach) - int(total/mbach)) > 0:
@@ -81,7 +70,7 @@ def test_model(sess_test, objData):
         batch, label = objData.generate_batch()
 
         # ejecutamos el grafo de tensorflow y almacenamos el vector de la ultima capa
-        prob, layer = sess_test.run([vgg.prob, vgg.relu6], feed_dict={vgg_batch: batch, train_mode: False})
+        prob = sess_test.run(MLP.prob, feed_dict={mlp_batch: batch, train_mode: False})
 
         # save output of a layer
         # utils.save_layer_output(layer, label, name='Train_SNC4_relu6')
@@ -116,8 +105,7 @@ def train_model(sess_train, objData):
     for ep in range(epoch):
         print('\n     Epoch:', ep)
         t0 = time.time()
-        cost_i = 0
-        for i in range(2):
+        for i in range(objData.total_batchs):
             batch, label = objData.generate_batch()
 
             # Generate the 'one hot' or labels
@@ -125,17 +113,14 @@ def train_model(sess_train, objData):
             label = list(sess_train.run(label))
             # Run training
             t_start = time.time()
-            _, cost = sess_train.run([vgg.train, vgg.cost], feed_dict={vgg_batch: batch, vgg_label: label, train_mode: True})
+            sess_train.run(MLP.train, feed_dict={mlp_batch: batch, mlp_label: label, train_mode: True})
             t_end = time.time()
             # Next slice batch
             objData.next_batch()
-
-            cost_i = cost_i + cost
             print("        > Minibatch: %d train on batch time: %7.3f seg." % (i, (t_end - t_start)))
 
         t1 = time.time()
         # print("        Batch size: %d" % mini_batch_train)
-        print("        Cost per epoch: ", cost_i)
         print("        Time epoch: %7.3f seg." % (t1 - t0))
         print("        Time per iteration: %7.3f seg." % ((t1 - t0) / epoch))
 
@@ -143,35 +128,39 @@ def train_model(sess_train, objData):
 if __name__ == '__main__':
 
     # GENERATE DATA
-    data_train = Dataset(path_data=path_data_train, path_dir_images=path_dir_image_train, minibatch=mini_batch_train, cols=[0, 1])
-    data_test = Dataset(path_data=path_data_test, path_dir_images=path_dir_image_test, minibatch=mini_batch_test, cols=[0, 1], restrict=False, random=False)
-    # data_test = Dataset(path_data=path_data_train, path_dir_images=path_dir_image_train, minibatch=mini_batch_train, cols=[0, 1], restrict=False, random=False)
-
+    # Datos de media y valor maximo
+    data_normal = Dataset_csv(path_data=[path_data_train[0], path_data_test[0]], restrict=False, random=False)
+    Damax = data_normal.amax
+    print(Damax)
+    # Damax = 1
+    # Load data train
+    data_train = Dataset_csv(path_data=path_data_train, minibatch=mini_batch_train, max_value=Damax)
+    # Load data test
+    data_test = Dataset_csv(path_data=path_data_test, minibatch=mini_batch_test, max_value=Damax, restrict=False, random=False)
     accuracy = 0
 
     with tf.Session() as sess:
 
         # DEFINE MODEL
-        vgg_batch = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        vgg_label = tf.placeholder(tf.float32, [None, num_class])
+        mlp_batch = tf.placeholder(tf.float32, [None, 4096])
+        mlp_label = tf.placeholder(tf.float32, [None, num_class])
         train_mode = tf.placeholder(tf.bool)
 
-        # Initialize of the model VGG19
-        vgg = vgg19.Vgg19(path_load_weight, learning_rate=learning_rate, size_layer_fc=1536, load_weight_fc=load_weight_fc)
-        vgg.build(vgg_batch, vgg_label, train_mode)
+        MLP = mlp.MLPerceptron(path_load_weight, learning_rate=learning_rate, size_layer_fc=2048)
+        MLP.build(mlp_batch, mlp_label, train_mode)
 
         sess.run(tf.global_variables_initializer())
         test_model(sess_test=sess, objData=data_test)
-        train_model(sess_train=sess, objData=data_train)
-        accuracy = test_model(sess_test=sess, objData=data_test)
-
-        # SAVE LOG: Genera un registro en el archivo log-server.txt
-        utils.write_log(total_data=data_train.total_images,
-                        epoch=epoch,
-                        m_batch=mini_batch_train,
-                        l_rate=learning_rate,
-                        accuracy=accuracy,
-                        file_npy=path_load_weight)
-
-        # SAVE WEIGHTs
-        vgg.save_npy(sess, path_save_weight)
+        # train_model(sess_train=sess, objData=data_train)
+        # accuracy = test_model(sess_test=sess, objData=data_test)
+        # #
+        # # SAVE LOG: Genera un registro en el archivo log-server.txt
+        # utils.write_log(total_data=data_train.total_inputs,
+        #                 epoch=epoch,
+        #                 m_batch=mini_batch_train,
+        #                 l_rate=learning_rate,
+        #                 accuracy=accuracy,
+        #                 file_npy=path_load_weight)
+        #
+        # # SAVE WEIGHTs
+        # MLP.save_npy(sess, path_save_weight)

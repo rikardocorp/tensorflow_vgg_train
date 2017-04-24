@@ -21,14 +21,17 @@ else:
 
 # GLOBAL VARIABLES
 path = 'features/'
-path_data_train = [path+'output_relu6.csv']
-path_data_test = [path+'output.csv']
+path_data_train = [path+'Train_SNC4_relu6.csv']
+path_data_test = [path+'Test_SNC4_relu6.csv']
 
-mini_batch_train = 50
-mini_batch_test = 15
-epoch = 5
-learning_rate = 0.01
-noise_level = 0.2
+path_load_weight = None
+path_save_weight = 'weight/saveAE_1.npy'
+
+mini_batch_train = 20
+mini_batch_test = 25
+epoch = 20
+learning_rate = 0.001
+noise_level = 0
 
 
 # Función, fase de test
@@ -77,74 +80,32 @@ if __name__ == '__main__':
     Dmean = data_normal.media_mean
 
     # Load data train
-    data_train = Dataset_csv(path_data=path_data_train, minibatch=mini_batch_train, max_value=Damax, media_mean=Dmean)
+    data_train = Dataset_csv(path_data=path_data_train, minibatch=mini_batch_train, max_value=Damax)
     # Load data test
-    data_test = Dataset_csv(path_data=path_data_test, minibatch=mini_batch_test, max_value=Damax, media_mean=Dmean, restrict=False, random=False)
+    data_test = Dataset_csv(path_data=path_data_test, minibatch=mini_batch_test, max_value=Damax, restrict=False, random=False)
 
     with tf.Session() as sess:
 
-        # x_batch = tf.placeholder(tf.float32, [None, 4096])
-        # mask = tf.placeholder(tf.float32, [None, 4096])
-        # train_mode = tf.placeholder(tf.bool)
-        #
-        # AEncode = AE.AEncoder(learning_rate=learning_rate, noise=noise_level)
-        # AEncode.build(input_batch=x_batch, input_mask=mask, train_mode=train_mode)
-        #
-        # sess.run(tf.global_variables_initializer())
-        # # test_model(sess_test=sess, objData=data_test)
-        # train_model(sess_train=sess, objData=data_train, objDatatest=data_test)
-        # # test_model(sess_test=sess, objData=data_test)
-        #
-        # # Plot example reconstructions
-        # n_examples = data_test.minibatch
-        # test_xs, _ = data_test.generate_batch()
-        # test_xs_norm = np.array(test_xs)
-        # mask_np = np.random.binomial(1, 1 - noise_level, test_xs.shape)
-        #
-        # recon = sess.run(AEncode.prob, feed_dict={x_batch: test_xs_norm, mask: mask_np})
-        # fig, axs = plt.subplots(2, n_examples, figsize=(10, 2))
-        # for example_i in range(n_examples):
-        #     axs[0][example_i].imshow(
-        #         np.reshape(test_xs[example_i, :], (64, 64)))
-        #     axs[1][example_i].imshow(
-        #         np.reshape(recon[example_i, :], (64, 64)))
-        # fig.show()
-        # plt.draw()
-        # plt.waitforbuttonpress()
-
-        # -----------------------------------------------------
-        import tensorflow.examples.tutorials.mnist.input_data as input_data
-        mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-        trX, trY, teX, teY = mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
-
-        x_batch = tf.placeholder(tf.float32, [None, 784])
-        mask = tf.placeholder(tf.float32, [None, 784])
+        x_batch = tf.placeholder(tf.float32, [None, 4096])
+        mask = tf.placeholder(tf.float32, [None, 4096])
         train_mode = tf.placeholder(tf.bool)
 
-        AEncode = AE.AEncoder(learning_rate=learning_rate, noise=noise_level)
-        AEncode.build(input_batch=x_batch, input_mask=mask, train_mode=train_mode)
+        AEncode = AE.AEncoder(path_load_weight, learning_rate=learning_rate, noise=noise_level)
+        AEncode.build(input_batch=x_batch, input_mask=mask, train_mode=train_mode, sess=sess)
 
         sess.run(tf.global_variables_initializer())
 
-        # you need to initialize all variables
-        sess.run(tf.global_variables_initializer())
+        print('Original Cost: ', test_model(sess, data_test))
+        train_model(sess_train=sess, objData=data_train, objDatatest=data_test)
+        # test_model(sess_test=sess, objData=data_test)
 
-        total = len(trX)
-        epoch = 10
-        # total = 1500
-        for i in range(epoch):
-            for start, end in zip(range(0, total, 128), range(128, total, 128)):
-                input_ = trX[start:end]
-                mask_np = np.random.binomial(1, 1 - noise_level, input_.shape)
-                sess.run(AEncode.train, feed_dict={x_batch: input_, mask: mask_np})
+        # SAVE WEIGHTs
+        if path_save_weight is not None:
+            AEncode.save_npy(sess, path_save_weight)
 
-            mask_np = np.random.binomial(1, 1 - noise_level, teX.shape)
-            print(i, sess.run(AEncode.cost, feed_dict={x_batch: teX, mask: mask_np}))
-
-        # %%
         # Plot example reconstructions
-        n_examples = 10
-        test_xs, _ = mnist.test.next_batch(n_examples)
+        n_examples = 5 #data_test.minibatch
+        test_xs, _ = data_train.generate_batch()
         test_xs_norm = np.array(test_xs)
         mask_np = np.random.binomial(1, 1 - noise_level, test_xs.shape)
 
@@ -152,12 +113,60 @@ if __name__ == '__main__':
         fig, axs = plt.subplots(2, n_examples, figsize=(10, 2))
         for example_i in range(n_examples):
             axs[0][example_i].imshow(
-                np.reshape(test_xs[example_i, :], (28, 28)))
+                np.reshape(test_xs[example_i, :], (64, 64)))
             axs[1][example_i].imshow(
-                np.reshape(recon[example_i, :], (28, 28)))
+                np.reshape(recon[example_i, :], (64, 64)))
         fig.show()
         plt.draw()
         plt.waitforbuttonpress()
+
+        # -----------------------------------------------------
+
+        # import tensorflow.examples.tutorials.mnist.input_data as input_data
+        # mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+        # trX, trY, teX, teY = mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
+        #
+        # x_batch = tf.placeholder(tf.float32, [None, 784])
+        # mask = tf.placeholder(tf.float32, [None, 784])
+        # train_mode = tf.placeholder(tf.bool)
+        #
+        # AEncode = AE.AEncoder(learning_rate=learning_rate, noise=noise_level)
+        # AEncode.build(input_batch=x_batch, input_mask=mask, train_mode=train_mode)
+        #
+        # sess.run(tf.global_variables_initializer())
+        #
+        # # you need to initialize all variables
+        # sess.run(tf.global_variables_initializer())
+        #
+        # total = len(trX)
+        # epoch = 15
+        # # total = 1500
+        # for i in range(epoch):
+        #     for start, end in zip(range(0, total, 128), range(128, total, 128)):
+        #         input_ = trX[start:end]
+        #         mask_np = np.random.binomial(1, 1 - noise_level, input_.shape)
+        #         sess.run(AEncode.train, feed_dict={x_batch: input_, mask: mask_np})
+        #
+        #     mask_np = np.random.binomial(1, 1 - noise_level, teX.shape)
+        #     print(i, sess.run(AEncode.cost, feed_dict={x_batch: teX, mask: mask_np}))
+        #
+        # # %%
+        # # Plot example reconstructions
+        # n_examples = 10
+        # test_xs, _ = mnist.test.next_batch(n_examples)
+        # test_xs_norm = np.array(test_xs)
+        # mask_np = np.random.binomial(1, 1 - noise_level, test_xs.shape)
+        #
+        # recon = sess.run(AEncode.prob, feed_dict={x_batch: test_xs_norm, mask: mask_np})
+        # fig, axs = plt.subplots(2, n_examples, figsize=(10, 2))
+        # for example_i in range(n_examples):
+        #     axs[0][example_i].imshow(
+        #         np.reshape(test_xs[example_i, :], (28, 28)))
+        #     axs[1][example_i].imshow(
+        #         np.reshape(recon[example_i, :], (28, 28)))
+        # fig.show()
+        # plt.draw()
+        # plt.waitforbuttonpress()
 
         # -----------------------------------------------------
 

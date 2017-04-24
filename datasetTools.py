@@ -167,6 +167,7 @@ class Dataset_csv:
             assert os.path.exists(file), 'No existe el archivo con los datos de entrada ' + file
             aux = pd.read_csv(file, header=None)
             df.append(aux)
+
         self.data = pd.concat(df).reset_index(drop=True)
 
         self.inputs = self.data.iloc[:, :-1]
@@ -177,7 +178,7 @@ class Dataset_csv:
             self.amax = max_value
 
         self.inputs = self.inputs / self.amax
-        self.labels = self.data.iloc[:, -1:]
+        self.labels = self.data.iloc[:, -1:].astype(int)
         self.total_inputs = len(self.inputs)
 
         if media_mean is None:
@@ -283,4 +284,4 @@ class Dataset_csv:
         df = pd.DataFrame(df).reset_index(drop=True)
 
         self.inputs = df.iloc[:, :-1] / self.amax
-        self.labels = df.iloc[:, -1:]
+        self.labels = df.iloc[:, -1:].astype(int)

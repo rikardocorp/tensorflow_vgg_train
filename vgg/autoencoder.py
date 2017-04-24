@@ -19,20 +19,21 @@ class AEncoder:
         self.dropout = dropout
         self.noise = noise
 
-    def build(self, input_batch, input_mask, train_mode=None):
-
+    def build(self, input_batch, input_mask, train_mode=None, sess=None):
+        self.sess = sess
         start_time = time.time()
         innBatch = input_batch * input_mask
 
-        # self.fc1 = self.fc_layer_sigm(innBatch, 4096, 2048, "fc1")
-        # self.prob = self.fc_layer_sigm(self.fc1, 2048, 4096, "prob", decode_w='fc1')
+        self.fc1 = self.fc_layer_sigm(innBatch, 4096, 2048, "fc1")
+        self.prob = self.fc_layer_sigm(self.fc1, 2048, 4096, "prob", decode_w='fc1')
 
-        self.fc1 = self.fc_layer_sigm(innBatch, 784, 500, "fc1")
-        self.prob = self.fc_layer_sigm(self.fc1, 500, 784, "prob", decode_w='fc1')
+        # self.fc1 = self.fc_layer_sigm(innBatch, 784, 500, "fc1")
+        # self.prob = self.fc_layer_sigm(self.fc1, 500, 784, "prob", decode_w='fc1')
 
         # Calculamos el error
         self.cost = tf.reduce_sum(tf.pow(input_batch - self.prob, 2))
         self.train = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
+        # self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
 
         self.data_dict = None
         print(("build model finished: %ds" % (time.time() - start_time)))
@@ -90,13 +91,14 @@ class AEncoder:
         return weights, biases
 
     def get_var_fc(self, initial_value, name, idx, var_name, is_variable=False):
+
         if self.data_dict is not None and name in self.data_dict:
             value = self.data_dict[name][idx]
         else:
             value = initial_value
 
         if self.trainable:
-            if is_variable is False:
+            if is_variable is False or self.data_dict is not None:
                 var = tf.Variable(value, name=var_name)
             else:
                 var = value

@@ -1,9 +1,6 @@
 import tensorflow as tf
 import time
 import numpy as np
-from functools import reduce
-
-VGG_MEAN = [103.939, 116.779, 123.68]
 
 
 class MLPerceptron:
@@ -11,9 +8,9 @@ class MLPerceptron:
     A trainable version VGG19.
     """
 
-    def __init__(self, vgg19_npy_path=None, trainable=True, learning_rate=0.05, dropout=0.5, size_layer_fc=1024):
-        if vgg19_npy_path is not None:
-            self.data_dict = np.load(vgg19_npy_path, encoding='latin1').item()
+    def __init__(self, mlp_npy_path=None, trainable=True, learning_rate=0.05, dropout=0.5, size_layer_fc=1024):
+        if mlp_npy_path is not None:
+            self.data_dict = np.load(mlp_npy_path, encoding='latin1').item()
             print("npy file loaded")
         else:
             self.data_dict = None
@@ -29,18 +26,7 @@ class MLPerceptron:
 
         start_time = time.time()
 
-        self.fc6 = self.fc_layer(input_batch, 4096, 2048, "fc6")  # 25088 = ((224 // (2 ** 5)) ** 2) * 512
-        self.relu6 = tf.nn.relu(self.fc6)
-
-        # DROPOUT
-        if train_mode is not None:
-            # train_mode: True[train] -> dropout activate | False[test] -> dropout deactivate
-            self.relu6 = tf.cond(train_mode, lambda: tf.nn.dropout(self.relu6, self.dropout), lambda: self.relu6)
-        elif self.trainable:
-            # train_mode: None -> Default [test or classification]
-            self.relu6 = tf.nn.dropout(self.relu6, self.dropout)
-
-        self.fc7 = self.fc_layer(self.relu6, 2048, 512, "fc7")
+        self.fc7 = self.fc_layer(input_batch, 4096, self.size_layer, "fc7")
         self.relu7 = tf.nn.relu(self.fc7)
 
         # DROPOUT
@@ -51,7 +37,7 @@ class MLPerceptron:
             # train_mode: None -> Default [test or classification]
             self.relu7 = tf.nn.dropout(self.relu7, self.dropout)
 
-        self.fc8 = self.fc_layer(self.relu7, 512, 2, "fc8")
+        self.fc8 = self.fc_layer(self.relu7, self.size_layer, 2, "fc8")
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
         # COST - TRAINING

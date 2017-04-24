@@ -25,7 +25,7 @@ def load_image(path, scale=255, xrange=[0, 1]):
     xx = int((img.shape[1] - short_edge) / 2)
     crop_img = img[yy: yy + short_edge, xx: xx + short_edge]
     # resize to 224, 224
-    resized_img = skimage.transform.resize(crop_img, (224, 224))
+    resized_img = skimage.transform.resize(crop_img, (224, 224), mode='constant')
     return resized_img
 
 
@@ -62,14 +62,14 @@ def save_image(path_source, path_dest, name_image, transform=False, path_csv=Non
 
 def save_image2(path_source, path_dest, name_image, path_csv=None):
     name, ext = name_image.split('.')
-    f = open(path_csv, "a+")
+    # f = open(path_csv, "a+")
 
     img = load_image(path_source + name_image)
     imgflip = np.fliplr(img)
-    skimage.io.imsave(path_dest + name+'_flip.'+ext, imgflip)
-    f.write(",".join(map(str, [name+'_flip', 1])) + "\n")
+    skimage.io.imsave(path_dest + name+'_.'+ext, imgflip)
+    # f.write(",".join(map(str, [name+'_90', 1])) + "\n")
 
-    f.close()
+    # f.close()
     # print('Save image: ', name_image)
 
 
