@@ -62,7 +62,7 @@ class Dataset:
         self.end = minibatch
 
         if restrict is True:
-            assert (self.total_images / self.minibatch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada.'
+            assert (self.total_images / self.minibatch).is_integer(), print('El minibatch debe ser multiplo del total de datos de entrada.', self.total_images)
 
         self.total_batchs = int(self.total_images / self.minibatch)
 
@@ -191,7 +191,8 @@ class Dataset_csv:
         self.end = minibatch
 
         if restrict is True:
-            assert (self.total_inputs / self.minibatch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada.'
+            assert (self.total_inputs / self.minibatch).is_integer(), print('El minibatch debe ser multiplo del total de datos de entrada ', self.total_inputs)
+
 
         self.total_batchs = int(self.total_inputs / self.minibatch)
 

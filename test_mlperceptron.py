@@ -7,7 +7,7 @@ import os
 import numpy as np
 from sklearn.metrics import confusion_matrix
 
-switch_server = False
+switch_server = True
 
 if switch_server is True:
     import utils
@@ -21,19 +21,16 @@ else:
 
 # GLOBAL VARIABLES
 path = 'features/'
-path_data_train = [path+'output_Train_SNC4_relu6.csv']
-path_data_test  = [path+'output_Test_SNC4_relu6.csv']
+path_data_train = [path+'output_Train_AE1_fc1.csv']
+path_data_test  = [path+'output_Test_AE1_fc1.csv']
 path_list_labels = '../data/ISB2016/synset_skin.txt'
-path_load_weight = 'weight/saveMlpB_4.npy'
+path_load_weight = None
 path_save_weight = 'weight/saveMlpB_4.npy'
 mini_batch_train = 20
 mini_batch_test = 30
-epoch = 40
+epoch = 20
 num_class = 2
 learning_rate = 0.001
-
-print(path_data_train)
-print(path_data_test)
 
 # VALIDATE INPUT DATA
 # assert (total_images / mini_batch).is_integer(), 'El minibatch debe ser multiplo del total de datos de entrada'
@@ -129,10 +126,10 @@ if __name__ == '__main__':
 
     # GENERATE DATA
     # Datos de media y valor maximo
-    data_normal = Dataset_csv(path_data=[path_data_train[0], path_data_test[0]], restrict=False, random=False)
-    Damax = data_normal.amax
-    print(Damax)
-    # Damax = 1
+    # data_normal = Dataset_csv(path_data=[path_data_train[0], path_data_test[0]], restrict=False, random=False)
+    # Damax = data_normal.amax
+    # print(Damax)
+    Damax = 1
     # Load data train
     data_train = Dataset_csv(path_data=path_data_train, minibatch=mini_batch_train, max_value=Damax)
     # Load data test
@@ -142,25 +139,17 @@ if __name__ == '__main__':
     with tf.Session() as sess:
 
         # DEFINE MODEL
-        mlp_batch = tf.placeholder(tf.float32, [None, 4096])
+        mlp_batch = tf.placeholder(tf.float32, [None, 2048])
         mlp_label = tf.placeholder(tf.float32, [None, num_class])
         train_mode = tf.placeholder(tf.bool)
 
-        MLP = mlp.MLPerceptron(path_load_weight, learning_rate=learning_rate, size_layer_fc=2048)
+        MLP = mlp.MLPerceptron(path_load_weight, learning_rate=learning_rate, size_layer_fc=1024)
         MLP.build(mlp_batch, mlp_label, train_mode)
 
         sess.run(tf.global_variables_initializer())
         test_model(sess_test=sess, objData=data_test)
-        # train_model(sess_train=sess, objData=data_train)
-        # accuracy = test_model(sess_test=sess, objData=data_test)
-        # #
-        # # SAVE LOG: Genera un registro en el archivo log-server.txt
-        # utils.write_log(total_data=data_train.total_inputs,
-        #                 epoch=epoch,
-        #                 m_batch=mini_batch_train,
-        #                 l_rate=learning_rate,
-        #                 accuracy=accuracy,
-        #                 file_npy=path_load_weight)
-        #
+        train_model(sess_train=sess, objData=data_train)
+        accuracy = test_model(sess_test=sess, objData=data_test)
+
         # # SAVE WEIGHTs
         # MLP.save_npy(sess, path_save_weight)

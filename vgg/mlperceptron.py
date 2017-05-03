@@ -26,7 +26,7 @@ class MLPerceptron:
 
         start_time = time.time()
 
-        self.fc7 = self.fc_layer(input_batch, 4096, self.size_layer, "fc7")
+        self.fc7 = self.fc_layer(input_batch, 2048, self.size_layer, "fc7")
         self.relu7 = tf.nn.relu(self.fc7)
 
         # DROPOUT

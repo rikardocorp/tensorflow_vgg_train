@@ -7,7 +7,7 @@ import os
 import numpy as np
 from sklearn.metrics import confusion_matrix
 
-switch_server = False
+switch_server = True
 
 if switch_server is True:
     import utils
@@ -93,7 +93,7 @@ def test_model(sess_test, objData):
         # hacemos que el batch apunte a los siguiente grupo de imagenes de tamaño 'n'
         objData.next_batch_test()
 
-    # promediamos la presicion total
+    # promediamos la precision total
     accuracy_final = count_success/total
     print('\n# STATUS: Confusion Matrix')
     print(count_by_class)

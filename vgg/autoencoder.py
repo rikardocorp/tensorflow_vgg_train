@@ -17,30 +17,66 @@ class AEncoder:
         self.trainable = trainable
         self.learning_rate = learning_rate
         self.dropout = dropout
+        self.encoder_w = []
         self.noise = noise
 
-    def build(self, input_batch, input_mask, train_mode=None, sess=None):
-        self.sess = sess
+    def build(self, input_batch, input_mask, l_hidden=[2048]):
+
         start_time = time.time()
         innBatch = input_batch * input_mask
+        current_input = input_batch * input_mask
 
-        self.fc1 = self.fc_layer_sigm(innBatch, 4096, 2048, "fc1")
-        self.prob = self.fc_layer_sigm(self.fc1, 2048, 4096, "prob", decode_w='fc1')
+        #
+        # BUILD THE ENCODER
+        # -----------------
+        shapes = []
+        self.net = {}
+        for i, n_output in enumerate(l_hidden[0:]):
+            shapes.append(current_input.get_shape().as_list())
+            n_input = current_input.get_shape().as_list()[1]
+            name = 'encodeFC_' + str(i)
 
-        # self.fc1 = self.fc_layer_sigm(innBatch, 784, 500, "fc1")
-        # self.prob = self.fc_layer_sigm(self.fc1, 500, 784, "prob", decode_w='fc1')
+            self.net[name] = self.fc_layer_sigm(current_input, n_input, n_output, name)
+            current_input = self.net[name]
 
-        # Calculamos el error
-        self.cost = tf.reduce_sum(tf.pow(input_batch - self.prob, 2))
+        #
+        # BUILD THE DECODER USING THE SAME WEIGHTS
+        # ----------------------------------------
+        self.z = current_input
+        self.encoder_w.reverse()
+        shapes.reverse()
+
+        for i, shape in enumerate(shapes):
+            name = 'decodeFC_' + str(i)
+            n_input = current_input.get_shape().as_list()[1]
+            self.net[name] = self.fc_layer_sigm_decode(current_input, n_input, shape[1], i, name)
+            current_input = self.net[name]
+
+        self.y = current_input
+        self.cost = tf.reduce_sum(tf.square(self.y - input_batch))
         self.train = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
         # self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
 
         self.data_dict = None
+        self.encoder_w = None
         print(("build model finished: %ds" % (time.time() - start_time)))
 
-    def fc_layer_sigm(self, bottom, in_size, out_size, name, decode_w=None):
+    def fc_layer_sigm(self, bottom, in_size, out_size, name):
         with tf.variable_scope(name):
-            weights, biases = self.get_fc_var(in_size, out_size, name, type=2, decode_w=decode_w)
+            weights, biases = self.get_fc_var(in_size, out_size, name, type=2)
+
+            x = tf.reshape(bottom, [-1, in_size])
+            fc = tf.nn.sigmoid(tf.matmul(x, weights) + biases)
+            return fc
+
+    def fc_layer_sigm_decode(self, bottom, in_size, out_size, index, name):
+        with tf.variable_scope(name):
+            initial_value = tf.transpose(self.encoder_w[index])
+            weights = self.get_var_fc(initial_value, name, 0, name + "_weights")
+
+            # initial_value = tf.truncated_normal([out_size], .0, .001)
+            initial_value = tf.zeros([out_size])
+            biases = self.get_var_fc(initial_value, name, 1, name + "_biases")
 
             x = tf.reshape(bottom, [-1, in_size])
             fc = tf.nn.sigmoid(tf.matmul(x, weights) + biases)
@@ -54,43 +90,28 @@ class AEncoder:
             fc = tf.nn.bias_add(tf.matmul(x, weights), biases)
             return fc
 
-    def get_fc_var(self, in_size, out_size, name, type=1, decode_w=None):
+    def get_fc_var(self, in_size, out_size, name, type=1):
 
-        if type == 1 and decode_w is None:
+        if type == 1:
             initial_value = tf.truncated_normal([in_size, out_size], 0.0, 0.001)
+            self.encoder_w.append(initial_value)
             weights = self.get_var_fc(initial_value, name, 0, name + "_weights")
 
             initial_value = tf.truncated_normal([out_size], .0, .001)
             biases = self.get_var_fc(initial_value, name, 1, name + "_biases")
 
-        elif type == 2 and decode_w is None:
+        elif type == 2:
             w_init_max = 4 * np.sqrt(6. / (in_size + out_size))
-            initial_value = tf.random_uniform([in_size, out_size],
-                                              minval=-w_init_max,
-                                              maxval=w_init_max)
+            initial_value = tf.random_uniform([in_size, out_size], minval=-w_init_max, maxval=w_init_max)
+            self.encoder_w.append(initial_value)
             weights = self.get_var_fc(initial_value, name, 0, name + "_weights")
+
             initial_value = tf.zeros([out_size])
             biases = self.get_var_fc(initial_value, name, 1, name + "_biases")
 
-        if decode_w is not None:
-            initial_value = tf.transpose(self.var_dict[(decode_w, 0)])
-            # w_init_max = 4 * np.sqrt(6. / (in_size + out_size))
-            # initial_value = tf.random_uniform([in_size, out_size],
-            #                                   minval=-w_init_max,
-            #                                   maxval=w_init_max)
-
-            # weights = initial_value
-            weights = self.get_var_fc(initial_value, name, 0, name + "_weights", is_variable=True)
-            if type == 1:
-                initial_value = tf.truncated_normal([out_size], .0, .001)
-                biases = self.get_var_fc(initial_value, name, 1, name + "_biases")
-            elif type == 2:
-                initial_value = tf.zeros([out_size])
-                biases = self.get_var_fc(initial_value, name, 1, name + "_biases")
-
         return weights, biases
 
-    def get_var_fc(self, initial_value, name, idx, var_name, is_variable=False):
+    def get_var_fc(self, initial_value, name, idx, var_name):
 
         if self.data_dict is not None and name in self.data_dict:
             value = self.data_dict[name][idx]
@@ -98,10 +119,7 @@ class AEncoder:
             value = initial_value
 
         if self.trainable:
-            if is_variable is False or self.data_dict is not None:
-                var = tf.Variable(value, name=var_name)
-            else:
-                var = value
+            var = tf.Variable(value, name=var_name)
         else:
             var = tf.constant(value, dtype=tf.float32, name=var_name)
 
